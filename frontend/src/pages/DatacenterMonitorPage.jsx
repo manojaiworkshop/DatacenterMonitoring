@@ -17,6 +17,7 @@ function DatacenterMonitorPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [selectedDevice, setSelectedDevice] = useState(null)
+  const [selectedDatacenterId, setSelectedDatacenterId] = useState(null)
   const navigate = useNavigate()
   const { theme } = useTheme()
 
@@ -90,6 +91,11 @@ function DatacenterMonitorPage() {
       console.error('Page: Error in handleAddDatacenter:', error)
       throw error
     }
+  }
+
+  const handleDeviceClick = (device, datacenterId) => {
+    setSelectedDevice(device)
+    setSelectedDatacenterId(datacenterId)
   }
 
   const handleLogout = () => {
@@ -194,33 +200,73 @@ function DatacenterMonitorPage() {
               ? 'grid-cols-1' 
               : 'grid-cols-2'
           }`}>
-            {/* Left side - Datacenter(s) */}
-            <div className={selectedDevice ? 'col-span-1' : datacenters.length === 1 ? 'col-span-1' : 'col-span-2'}>
-              <div className={`grid h-full gap-4 ${
-                selectedDevice || datacenters.length === 1 
-                  ? 'grid-cols-1' 
-                  : 'grid-cols-2'
-              }`}>
-                {(selectedDevice ? datacenters.slice(0, 1) : datacenters.slice(0, 2)).map((datacenter) => (
-                  <DatacenterPanel
-                    key={datacenter.id}
-                    datacenter={datacenter}
-                    socket={socket}
-                    onUpdate={loadDatacenters}
-                    onDeviceClick={setSelectedDevice}
-                  />
-                ))}
-              </div>
-            </div>
-            
-            {/* Right side - Device Dashboard */}
-            {selectedDevice && (
-              <div className="col-span-1">
-                <DeviceDashboard
-                  device={selectedDevice}
-                  socket={socket}
-                  onClose={() => setSelectedDevice(null)}
-                />
+            {selectedDevice ? (
+              // When device is selected, show one datacenter and dashboard
+              <>
+                {selectedDatacenterId === datacenters[0]?.id ? (
+                  // Left datacenter clicked - show left datacenter and dashboard on right
+                  <>
+                    <div className="col-span-1">
+                      <DatacenterPanel
+                        key={datacenters[0].id}
+                        datacenter={datacenters[0]}
+                        socket={socket}
+                        onUpdate={loadDatacenters}
+                        onDeviceClick={(device) => handleDeviceClick(device, datacenters[0].id)}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <DeviceDashboard
+                        device={selectedDevice}
+                        socket={socket}
+                        onClose={() => {
+                          setSelectedDevice(null)
+                          setSelectedDatacenterId(null)
+                        }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  // Right datacenter clicked - show dashboard on left and datacenter on right
+                  <>
+                    <div className="col-span-1">
+                      <DeviceDashboard
+                        device={selectedDevice}
+                        socket={socket}
+                        onClose={() => {
+                          setSelectedDevice(null)
+                          setSelectedDatacenterId(null)
+                        }}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <DatacenterPanel
+                        key={datacenters[1]?.id || datacenters[0].id}
+                        datacenter={datacenters[1] || datacenters[0]}
+                        socket={socket}
+                        onUpdate={loadDatacenters}
+                        onDeviceClick={(device) => handleDeviceClick(device, datacenters[1]?.id || datacenters[0].id)}
+                      />
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              // No device selected - show datacenters
+              <div className={datacenters.length === 1 ? 'col-span-1' : 'col-span-2'}>
+                <div className={`grid h-full gap-4 ${
+                  datacenters.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                }`}>
+                  {datacenters.slice(0, 2).map((datacenter) => (
+                    <DatacenterPanel
+                      key={datacenter.id}
+                      datacenter={datacenter}
+                      socket={socket}
+                      onUpdate={loadDatacenters}
+                      onDeviceClick={(device) => handleDeviceClick(device, datacenter.id)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
