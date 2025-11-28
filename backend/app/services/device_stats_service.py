@@ -137,7 +137,7 @@ class DeviceStatsService:
         
         try:
             # Get systemd services
-            command = "systemctl list-units --type=service --all --no-pager --no-legend | awk '{print $1,$2,$3,$4}' | head -50"
+            command = "systemctl list-units --type=service --all --no-pager --no-legend | awk '{print $1,$2,$3,$4}' | head -200"
             output = await self.execute_command(client, command)
             
             services = []
@@ -200,7 +200,7 @@ class DeviceStatsService:
         
         try:
             # Get top processes by CPU/Memory
-            command = "ps aux --sort=-%cpu | head -51 | tail -50 | awk '{printf \"%s|%s|%s|%s|%s\\n\", $2, $1, $3, $4, substr($0, index($0,$11))}'"
+            command = "ps aux --sort=-%cpu | head -201 | tail -200 | awk '{printf \"%s|%s|%s|%s|%s\\n\", $2, $1, $3, $4, substr($0, index($0,$11))}'"
             output = await self.execute_command(client, command)
             
             processes = []

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Play, Square, RotateCw, RefreshCw, AlertCircle } from 'lucide-react'
+import { Play, Square, RotateCw, RefreshCw, AlertCircle, Search } from 'lucide-react'
 import axios from 'axios'
 
 function ServicesTab({ device, theme }) {
@@ -7,6 +7,7 @@ function ServicesTab({ device, theme }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState({})
+  const [searchQuery, setSearchQuery] = useState('')
 
   const loadServices = async () => {
     try {
@@ -61,6 +62,11 @@ function ServicesTab({ device, theme }) {
     if (active === 'inactive') return 'text-gray-500'
     return 'text-yellow-500'
   }
+
+  // Filter services based on search query
+  const filteredServices = services.filter((service) =>
+    service.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   const getStatusBadge = (active, sub) => {
     const color = getStatusColor(active, sub)
@@ -118,23 +124,43 @@ function ServicesTab({ device, theme }) {
         <span className={`text-sm ${
           theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
         }`}>
-          {services.length} services
+          {filteredServices.length} / {services.length} services
         </span>
-        <button
-          onClick={loadServices}
-          className={`p-1 rounded transition-colors ${
+        <div className="flex items-center space-x-2" style={{ width: '35%' }}>
+          <div className={`flex items-center flex-1 px-3 py-1.5 rounded-lg border ${
             theme === 'dark'
-              ? 'hover:bg-gray-700 text-gray-400'
-              : 'hover:bg-gray-100 text-gray-600'
-          }`}
-          title="Refresh"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+              ? 'bg-gray-700 border-gray-600'
+              : 'bg-white border-gray-300'
+          }`}>
+            <Search className={`w-4 h-4 mr-2 ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search services..."
+              className={`flex-1 bg-transparent outline-none text-sm ${
+                theme === 'dark' ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'
+              }`}
+            />
+          </div>
+          <button
+            onClick={loadServices}
+            className={`p-1.5 rounded transition-colors ${
+              theme === 'dark'
+                ? 'hover:bg-gray-700 text-gray-400'
+                : 'hover:bg-gray-100 text-gray-600'
+            }`}
+            title="Refresh"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Services Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="overflow-auto" style={{ height: '50vh' }}>
         <table className="w-full">
           <thead className={`sticky top-0 ${
             theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
@@ -149,7 +175,7 @@ function ServicesTab({ device, theme }) {
             </tr>
           </thead>
           <tbody>
-            {services.map((service, index) => (
+            {filteredServices.map((service, index) => (
               <tr
                 key={index}
                 className={`border-b ${

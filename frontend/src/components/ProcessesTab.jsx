@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { RefreshCw, AlertCircle, XCircle, StopCircle } from 'lucide-react'
+import { RefreshCw, AlertCircle, XCircle, StopCircle, Search } from 'lucide-react'
 import axios from 'axios'
 
 function ProcessesTab({ device, theme }) {
@@ -8,6 +8,7 @@ function ProcessesTab({ device, theme }) {
   const [error, setError] = useState(null)
   const [actionLoading, setActionLoading] = useState({})
   const [sortBy, setSortBy] = useState('cpu') // 'cpu' or 'memory'
+  const [searchQuery, setSearchQuery] = useState('')
 
   const loadProcesses = async () => {
     try {
@@ -64,7 +65,14 @@ function ProcessesTab({ device, theme }) {
     }
   }
 
-  const sortedProcesses = [...processes].sort((a, b) => {
+  // Filter processes based on search query
+  const filteredProcesses = processes.filter((process) =>
+    process.command.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    process.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    process.pid.toString().includes(searchQuery)
+  )
+
+  const sortedProcesses = [...filteredProcesses].sort((a, b) => {
     if (sortBy === 'cpu') return b.cpu - a.cpu
     if (sortBy === 'memory') return b.memory - a.memory
     return 0
@@ -110,7 +118,7 @@ function ProcessesTab({ device, theme }) {
           <span className={`text-sm ${
             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
           }`}>
-            {processes.length} processes
+            {sortedProcesses.length} / {processes.length} processes
           </span>
           
           <div className="flex items-center space-x-2">
@@ -146,22 +154,42 @@ function ProcessesTab({ device, theme }) {
           </div>
         </div>
         
-        <button
-          onClick={loadProcesses}
-          disabled={loading}
-          className={`p-1 rounded transition-colors ${
+        <div className="flex items-center space-x-2" style={{ width: '30%' }}>
+          <div className={`flex items-center flex-1 px-3 py-1.5 rounded-lg border ${
             theme === 'dark'
-              ? 'hover:bg-gray-700 text-gray-400'
-              : 'hover:bg-gray-100 text-gray-600'
-          } disabled:opacity-50`}
-          title="Refresh"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-        </button>
+              ? 'bg-gray-700 border-gray-600'
+              : 'bg-white border-gray-300'
+          }`}>
+            <Search className={`w-4 h-4 mr-2 ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search processes..."
+              className={`flex-1 bg-transparent outline-none text-sm ${
+                theme === 'dark' ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'
+              }`}
+            />
+          </div>
+          <button
+            onClick={loadProcesses}
+            disabled={loading}
+            className={`p-1.5 rounded transition-colors ${
+              theme === 'dark'
+                ? 'hover:bg-gray-700 text-gray-400'
+                : 'hover:bg-gray-100 text-gray-600'
+            } disabled:opacity-50`}
+            title="Refresh"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Processes Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="overflow-auto" style={{ height: '50vh' }}>
         <table className="w-full text-sm">
           <thead className={`sticky top-0 ${
             theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
