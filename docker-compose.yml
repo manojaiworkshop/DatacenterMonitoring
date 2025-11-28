@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  dual-terminal-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dual-terminal-app
+    ports:
+      - "9080:80"
+    volumes:
+      # Persistent data storage
+      - app-data:/app/data
+      # Optional: Override .env file
+      # - ./backend/.env:/app/backend/.env
+    environment:
+      # Override environment variables here if needed
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - DEBUG=${DEBUG:-False}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  app-data:
+    driver: local
