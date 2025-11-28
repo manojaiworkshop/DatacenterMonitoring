@@ -10,7 +10,7 @@ const DEVICE_ICONS = {
   ups: Battery,
 }
 
-function DeviceTree({ datacenter, devices, onConnectSSH, onEdit, onDelete }) {
+function DeviceTree({ datacenter, devices, onConnectSSH, onEdit, onDelete, onDeviceClick }) {
   const { theme } = useTheme()
   const [expandedTypes, setExpandedTypes] = useState({
     pc: true,
@@ -31,6 +31,13 @@ function DeviceTree({ datacenter, devices, onConnectSSH, onEdit, onDelete }) {
 
   const toggleExpand = (type) => {
     setExpandedTypes((prev) => ({ ...prev, [type]: !prev[type] }))
+  }
+
+  const handleDeviceClick = (device) => {
+    // Only show dashboard for PC and server types
+    if ((device.device_type === 'pc' || device.device_type === 'server') && onDeviceClick) {
+      onDeviceClick(device)
+    }
   }
 
   const handleContextMenu = (e, device) => {
@@ -123,6 +130,7 @@ function DeviceTree({ datacenter, devices, onConnectSSH, onEdit, onDelete }) {
                     typeDevices.map((device) => (
                       <div
                         key={device.id}
+                        onClick={() => handleDeviceClick(device)}
                         onContextMenu={(e) => handleContextMenu(e, device)}
                         className={`flex items-center space-x-2 px-2 py-1 rounded cursor-pointer ${
                           selectedDevice?.id === device.id
@@ -133,6 +141,11 @@ function DeviceTree({ datacenter, devices, onConnectSSH, onEdit, onDelete }) {
                             ? 'hover:bg-gray-700'
                             : 'hover:bg-gray-100'
                         }`}
+                        title={
+                          device.device_type === 'pc' || device.device_type === 'server'
+                            ? 'Click to view dashboard'
+                            : ''
+                        }
                       >
                         <div className={`w-2 h-2 rounded-full ${
                           device.status === 'online' ? 'bg-green-500' :

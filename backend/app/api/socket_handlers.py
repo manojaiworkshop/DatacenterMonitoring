@@ -1,5 +1,6 @@
 import socketio
 from app.services.terminal_service import terminal_manager
+from app.services.device_stats_service import device_stats_service
 import asyncio
 from typing import Dict
 import logging
@@ -16,6 +17,9 @@ sio = socketio.AsyncServer(
 
 # Store user terminal mappings
 user_terminals: Dict[str, set] = {}
+
+# Store active device monitoring tasks
+device_monitoring_tasks: Dict[str, asyncio.Task] = {}
 
 
 @sio.event
@@ -147,4 +151,90 @@ async def stream_terminal_output(sid: str, terminal_id: str):
         # Notify client that terminal is closed
         await sio.emit('terminal_closed', {
             'terminal_id': terminal_id
+        }, room=sid)
+
+
+@sio.event
+async def start_device_monitoring(sid, data):
+    """Start streaming device statistics"""
+    try:
+        device_id = data.get('device_id')
+        host = data.get('host')
+        port = data.get('port', 22)
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not all([device_id, host, username, password]):
+            await sio.emit('error', {
+                'message': 'Missing required device connection info'
+            }, room=sid)
+            return
+        
+        # Create monitoring task key
+        task_key = f"{sid}:{device_id}"
+        
+        # Stop existing monitoring if any
+        if task_key in device_monitoring_tasks:
+            device_monitoring_tasks[task_key].cancel()
+        
+        # Start monitoring task
+        task = asyncio.create_task(
+            stream_device_stats(sid, device_id, host, port, username, password)
+        )
+        device_monitoring_tasks[task_key] = task
+        
+        logger.info(f"Started device monitoring for device {device_id}")
+        
+    except Exception as e:
+        logger.error(f"Error starting device monitoring: {e}")
+        await sio.emit('error', {
+            'message': f'Failed to start monitoring: {str(e)}'
+        }, room=sid)
+
+
+@sio.event
+async def stop_device_monitoring(sid, data):
+    """Stop streaming device statistics"""
+    try:
+        device_id = data.get('device_id')
+        task_key = f"{sid}:{device_id}"
+        
+        if task_key in device_monitoring_tasks:
+            device_monitoring_tasks[task_key].cancel()
+            del device_monitoring_tasks[task_key]
+            device_stats_service.close_connection(device_id)
+            logger.info(f"Stopped device monitoring for device {device_id}")
+        
+    except Exception as e:
+        logger.error(f"Error stopping device monitoring: {e}")
+
+
+async def stream_device_stats(sid: str, device_id: int, host: str, 
+                               port: int, username: str, password: str):
+    """Stream device statistics to client every 3 seconds"""
+    try:
+        while True:
+            # Get system stats
+            stats = await device_stats_service.get_system_stats(
+                device_id, host, port, username, password
+            )
+            
+            if stats and 'error' not in stats:
+                await sio.emit('device_stats_update', {
+                    'device_id': device_id,
+                    'stats': stats
+                }, room=sid)
+            else:
+                logger.warning(f"Failed to get stats for device {device_id}")
+            
+            # Wait 3 seconds before next update
+            await asyncio.sleep(3)
+            
+    except asyncio.CancelledError:
+        logger.info(f"Device monitoring cancelled for device {device_id}")
+    except Exception as e:
+        logger.error(f"Error streaming device stats: {e}")
+        await sio.emit('device_monitoring_error', {
+            'device_id': device_id,
+            'error': str(e)
         }, room=sid)

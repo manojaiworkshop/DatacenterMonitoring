@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { io } from 'socket.io-client'
 import DatacenterPanel from '../components/DatacenterPanel'
+import DeviceDashboard from '../components/DeviceDashboard'
 import { authService } from '../services/authService'
 import { datacenterService } from '../services/datacenterService'
 import { LogOut, Settings, Plus } from 'lucide-react'
@@ -15,6 +16,7 @@ function DatacenterMonitorPage() {
   const [showSettings, setShowSettings] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [selectedDevice, setSelectedDevice] = useState(null)
   const navigate = useNavigate()
   const { theme } = useTheme()
 
@@ -146,7 +148,7 @@ function DatacenterMonitorPage() {
         </div>
       </div>
 
-      {/* Datacenter Panels - Side by Side */}
+      {/* Datacenter Panels - Side by Side OR with Dashboard */}
       <div className="flex-1 p-4 overflow-hidden">
         {loading ? (
           <div className="h-full flex items-center justify-center">
@@ -186,18 +188,41 @@ function DatacenterMonitorPage() {
           </div>
         ) : (
           <div className={`grid h-full gap-4 ${
-            datacenters.length === 1 
+            selectedDevice 
+              ? 'grid-cols-2' 
+              : datacenters.length === 1 
               ? 'grid-cols-1' 
               : 'grid-cols-2'
           }`}>
-            {datacenters.slice(0, 2).map((datacenter) => (
-              <DatacenterPanel
-                key={datacenter.id}
-                datacenter={datacenter}
-                socket={socket}
-                onUpdate={loadDatacenters}
-              />
-            ))}
+            {/* Left side - Datacenter(s) */}
+            <div className={selectedDevice ? 'col-span-1' : datacenters.length === 1 ? 'col-span-1' : 'col-span-2'}>
+              <div className={`grid h-full gap-4 ${
+                selectedDevice || datacenters.length === 1 
+                  ? 'grid-cols-1' 
+                  : 'grid-cols-2'
+              }`}>
+                {(selectedDevice ? datacenters.slice(0, 1) : datacenters.slice(0, 2)).map((datacenter) => (
+                  <DatacenterPanel
+                    key={datacenter.id}
+                    datacenter={datacenter}
+                    socket={socket}
+                    onUpdate={loadDatacenters}
+                    onDeviceClick={setSelectedDevice}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            {/* Right side - Device Dashboard */}
+            {selectedDevice && (
+              <div className="col-span-1">
+                <DeviceDashboard
+                  device={selectedDevice}
+                  socket={socket}
+                  onClose={() => setSelectedDevice(null)}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

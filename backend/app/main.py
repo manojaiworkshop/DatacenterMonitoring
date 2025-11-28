@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.core.database import init_db
 from app.api.auth import router as auth_router
 from app.api.datacenter import router as datacenter_router
+from app.api.device_stats import router as device_stats_router
 from app.api.socket_handlers import sio
 from app.services.device_monitor import device_monitor
 
@@ -31,6 +32,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth_router)
 app.include_router(datacenter_router)
+app.include_router(device_stats_router)
 
 # Mount Socket.IO
 socket_app = socketio.ASGIApp(sio, app)

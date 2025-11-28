@@ -129,15 +129,29 @@ function TerminalTabs({ activeTerminals, activeTab, onTabChange, onCloseTerminal
     if (!isDragging) return
 
     const handleMouseMove = (e) => {
-      const windowHeight = window.innerHeight
+      // Get the parent container bounds
+      const panel = e.target.closest('.flex.flex-col.h-full')?.parentElement
+      if (!panel) return
+
+      const rect = panel.getBoundingClientRect()
       const mouseY = e.clientY
-      const headerHeight = 80 // Approximate header height
-      const availableHeight = windowHeight - headerHeight
-      const newHeight = ((windowHeight - mouseY) / availableHeight) * 100
+      const panelTop = rect.top
+      const panelHeight = rect.height
       
-      // Constrain between 15% and 60%
-      const constrainedHeight = Math.min(Math.max(newHeight, 15), 60)
+      // Calculate the distance from the top of the panel to the mouse
+      const distanceFromTop = mouseY - panelTop
+      
+      // Calculate percentage for terminal (inverted - bottom portion)
+      const newHeight = ((panelHeight - distanceFromTop) / panelHeight) * 100
+      
+      // Constrain between 15% and 70%
+      const constrainedHeight = Math.min(Math.max(newHeight, 15), 70)
       setTerminalHeight(constrainedHeight)
+      
+      // Notify parent component of height change
+      if (onHeightChange) {
+        onHeightChange(constrainedHeight)
+      }
       
       // Refit all terminals after resize
       Object.values(fitAddons.current).forEach(addon => {
@@ -158,7 +172,7 @@ function TerminalTabs({ activeTerminals, activeTab, onTabChange, onCloseTerminal
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isDragging])
+  }, [isDragging, onHeightChange])
 
   if (activeTerminals.length === 0) {
     return null
@@ -169,14 +183,19 @@ function TerminalTabs({ activeTerminals, activeTab, onTabChange, onCloseTerminal
       {/* Resize Handle */}
       <div
         onMouseDown={handleMouseDown}
-        className={`flex items-center justify-center cursor-ns-resize h-2 ${
-          theme === 'dark' 
-            ? 'bg-gray-700 hover:bg-gray-600' 
-            : 'bg-gray-200 hover:bg-gray-300'
-        } transition-colors ${isDragging ? 'bg-blue-500' : ''}`}
+        className={`flex items-center justify-center cursor-ns-resize border-b select-none ${
+          isDragging 
+            ? 'bg-blue-500 h-1' 
+            : theme === 'dark' 
+            ? 'bg-gray-700 hover:bg-blue-600 border-gray-600 h-1 hover:h-1.5' 
+            : 'bg-gray-300 hover:bg-blue-400 border-gray-400 h-1 hover:h-1.5'
+        } transition-all`}
+        title="Drag to resize terminal"
       >
         <GripHorizontal className={`w-8 h-4 ${
-          theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+          isDragging 
+            ? 'text-white' 
+            : theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
         }`} />
       </div>
 

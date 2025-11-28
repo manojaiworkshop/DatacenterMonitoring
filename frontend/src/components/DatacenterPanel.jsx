@@ -6,7 +6,7 @@ import TerminalTabs from './TerminalTabs'
 import AddDeviceModal from './AddDeviceModal'
 import { datacenterService } from '../services/datacenterService'
 
-function DatacenterPanel({ datacenter, socket, onUpdate }) {
+function DatacenterPanel({ datacenter, socket, onUpdate, onDeviceClick }) {
   const { theme } = useTheme()
   const [showAddDevice, setShowAddDevice] = useState(false)
   const [activeTerminals, setActiveTerminals] = useState([])
@@ -157,6 +157,7 @@ function DatacenterPanel({ datacenter, socket, onUpdate }) {
           onConnectSSH={handleConnectSSH}
           onEdit={handleEditDevice}
           onDelete={handleDeleteDevice}
+          onDeviceClick={onDeviceClick}
         />
       </div>
 
