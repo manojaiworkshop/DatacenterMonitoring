@@ -7,6 +7,7 @@ from app.core.database import init_db
 from app.api.auth import router as auth_router
 from app.api.datacenter import router as datacenter_router
 from app.api.socket_handlers import sio
+from app.services.device_monitor import device_monitor
 
 # Import models so SQLAlchemy knows about them
 from app.models.user import User  # noqa: F401
@@ -39,7 +40,15 @@ socket_app = socketio.ASGIApp(sio, app)
 async def startup_event():
     """Initialize database on startup"""
     await init_db()
+    device_monitor.sio = sio  # Pass Socket.IO instance to monitor
+    await device_monitor.start()
     print(f"🚀 {settings.APP_NAME} started successfully!")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    await device_monitor.stop()
 
 
 @app.get("/")

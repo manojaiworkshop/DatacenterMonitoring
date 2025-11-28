@@ -34,6 +34,27 @@ function DatacenterMonitorPage() {
       console.log('Disconnected from server')
     })
 
+    // Listen for device status updates
+    newSocket.on('device_status_update', (data) => {
+      console.log('Device status update:', data)
+      // Update the device status in the state
+      setDatacenters((prevDatacenters) => 
+        prevDatacenters.map((dc) => {
+          if (dc.id === data.datacenter_id) {
+            return {
+              ...dc,
+              devices: dc.devices.map((device) =>
+                device.id === data.device_id
+                  ? { ...device, status: data.status }
+                  : device
+              ),
+            }
+          }
+          return dc
+        })
+      )
+    })
+
     setSocket(newSocket)
 
     // Load datacenters

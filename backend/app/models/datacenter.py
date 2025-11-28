@@ -30,6 +30,7 @@ class Device(Base):
     ssh_password = Column(String, nullable=True)  # Encrypted in production
     description = Column(Text, nullable=True)
     status = Column(String, default="offline")  # online, offline, error
+    last_checked = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

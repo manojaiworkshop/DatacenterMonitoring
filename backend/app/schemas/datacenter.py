@@ -48,6 +48,7 @@ class DeviceResponse(BaseModel):
     ip_address: Optional[str]
     ssh_port: int
     ssh_username: Optional[str]
+    ssh_password: Optional[str] = None  # Include password for SSH connections
     description: Optional[str]
     status: str
     created_at: datetime

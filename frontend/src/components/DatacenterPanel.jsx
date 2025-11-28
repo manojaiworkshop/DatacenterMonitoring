@@ -10,6 +10,8 @@ function DatacenterPanel({ datacenter, socket, onUpdate }) {
   const { theme } = useTheme()
   const [showAddDevice, setShowAddDevice] = useState(false)
   const [activeTerminals, setActiveTerminals] = useState([])
+  const [activeTab, setActiveTab] = useState(null)
+  const [terminalHeight, setTerminalHeight] = useState(20) // Default 20%
   const [selectedDevice, setSelectedDevice] = useState(null)
 
   const handleAddDevice = async (deviceData) => {
@@ -26,6 +28,14 @@ function DatacenterPanel({ datacenter, socket, onUpdate }) {
       return
     }
 
+    console.log('Connecting SSH to device:', device)
+    console.log('SSH Config:', {
+      host: device.ip_address,
+      port: device.ssh_port,
+      username: device.ssh_username,
+      password: device.ssh_password ? '***' : 'MISSING'
+    })
+
     // Create SSH terminal
     if (socket) {
       socket.emit('create_terminal', {
@@ -33,21 +43,30 @@ function DatacenterPanel({ datacenter, socket, onUpdate }) {
         rows: 10,
         ssh_config: {
           host: device.ip_address,
-          port: device.ssh_port,
+          port: device.ssh_port || 22,
           username: device.ssh_username,
           password: device.ssh_password,
         },
       })
 
+      // Handle terminal created
       socket.once('terminal_created', (data) => {
-        setActiveTerminals((prev) => [
-          ...prev,
-          {
-            id: data.terminal_id,
-            title: `${device.name} (${device.ip_address})`,
-            deviceId: device.id,
-          },
-        ])
+        console.log('Terminal created:', data)
+        const newTerminal = {
+          id: data.terminal_id,
+          title: `${device.name} (${device.ip_address})`,
+          deviceId: device.id,
+          device: device,
+          sessionId: data.terminal_id,
+        }
+        setActiveTerminals((prev) => [...prev, newTerminal])
+        setActiveTab(device.id)  // Set as active tab
+      })
+
+      // Handle errors
+      socket.once('error', (error) => {
+        console.error('SSH Connection error:', error)
+        alert(`Failed to connect: ${error.message}`)
       })
     }
   }
@@ -124,9 +143,14 @@ function DatacenterPanel({ datacenter, socket, onUpdate }) {
       </div>
 
       {/* Content Area - Device Tree */}
-      <div className={`flex-1 overflow-auto p-3 ${
-        activeTerminals.length > 0 ? 'h-[80%]' : ''
-      }`}>
+      <div 
+        className="overflow-auto p-3"
+        style={{ 
+          height: activeTerminals.length > 0 
+            ? `${100 - terminalHeight}%` 
+            : '100%' 
+        }}
+      >
         <DeviceTree
           datacenter={datacenter}
           devices={datacenter.devices || []}
@@ -136,15 +160,21 @@ function DatacenterPanel({ datacenter, socket, onUpdate }) {
         />
       </div>
 
-      {/* Terminal Tabs - 20% height when active */}
+      {/* Terminal Tabs - Dynamic height when active */}
       {activeTerminals.length > 0 && (
-        <div className={`border-t ${
-          theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-        }`} style={{ height: '20%' }}>
+        <div 
+          className={`border-t ${
+            theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+          }`} 
+          style={{ height: `${terminalHeight}%` }}
+        >
           <TerminalTabs
-            terminals={activeTerminals}
+            activeTerminals={activeTerminals}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onCloseTerminal={handleCloseTerminal}
             socket={socket}
-            onClose={handleCloseTerminal}
+            onHeightChange={setTerminalHeight}
           />
         </div>
       )}
