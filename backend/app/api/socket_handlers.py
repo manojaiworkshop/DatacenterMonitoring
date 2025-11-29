@@ -238,3 +238,144 @@ async def stream_device_stats(sid: str, device_id: int, host: str,
             'device_id': device_id,
             'error': str(e)
         }, room=sid)
+
+
+# File Manager Events
+from app.services.file_manager_service import file_manager_service
+
+
+@sio.event
+async def list_directory(sid, data):
+    """List files and directories"""
+    try:
+        device_id = data.get('device_id')
+        host = data.get('host')
+        port = data.get('port', 22)
+        username = data.get('username')
+        password = data.get('password')
+        path = data.get('path', '/')
+        
+        connection_key = f"{sid}:files:{device_id}"
+        
+        result = await file_manager_service.list_directory(
+            connection_key, host, port, username, password, path
+        )
+        
+        await sio.emit('directory_listed', {
+            'device_id': device_id,
+            'path': path,
+            'data': result
+        }, room=sid)
+        
+    except Exception as e:
+        logger.error(f"Error listing directory: {e}")
+        await sio.emit('file_error', {
+            'error': str(e),
+            'operation': 'list_directory'
+        }, room=sid)
+
+
+@sio.event
+async def read_file(sid, data):
+    """Read file contents"""
+    try:
+        device_id = data.get('device_id')
+        host = data.get('host')
+        port = data.get('port', 22)
+        username = data.get('username')
+        password = data.get('password')
+        file_path = data.get('file_path')
+        
+        connection_key = f"{sid}:files:{device_id}"
+        
+        result = await file_manager_service.read_file(
+            connection_key, host, port, username, password, file_path
+        )
+        
+        await sio.emit('file_read', {
+            'device_id': device_id,
+            'data': result
+        }, room=sid)
+        
+    except Exception as e:
+        logger.error(f"Error reading file: {e}")
+        await sio.emit('file_error', {
+            'error': str(e),
+            'operation': 'read_file'
+        }, room=sid)
+
+
+@sio.event
+async def write_file(sid, data):
+    """Write file contents"""
+    try:
+        device_id = data.get('device_id')
+        host = data.get('host')
+        port = data.get('port', 22)
+        username = data.get('username')
+        password = data.get('password')
+        file_path = data.get('file_path')
+        content = data.get('content', '')
+        
+        connection_key = f"{sid}:files:{device_id}"
+        
+        result = await file_manager_service.write_file(
+            connection_key, host, port, username, password, file_path, content
+        )
+        
+        await sio.emit('file_written', {
+            'device_id': device_id,
+            'data': result
+        }, room=sid)
+        
+    except Exception as e:
+        logger.error(f"Error writing file: {e}")
+        await sio.emit('file_error', {
+            'error': str(e),
+            'operation': 'write_file'
+        }, room=sid)
+
+
+@sio.event
+async def search_files(sid, data):
+    """Search for files"""
+    try:
+        device_id = data.get('device_id')
+        host = data.get('host')
+        port = data.get('port', 22)
+        username = data.get('username')
+        password = data.get('password')
+        search_path = data.get('search_path', '/')
+        query = data.get('query', '')
+        
+        connection_key = f"{sid}:files:{device_id}"
+        
+        result = await file_manager_service.search_files(
+            connection_key, host, port, username, password, search_path, query
+        )
+        
+        await sio.emit('files_searched', {
+            'device_id': device_id,
+            'data': result
+        }, room=sid)
+        
+    except Exception as e:
+        logger.error(f"Error searching files: {e}")
+        await sio.emit('file_error', {
+            'error': str(e),
+            'operation': 'search_files'
+        }, room=sid)
+
+
+@sio.event
+async def close_file_manager(sid, data):
+    """Close file manager connection"""
+    try:
+        device_id = data.get('device_id')
+        connection_key = f"{sid}:files:{device_id}"
+        
+        file_manager_service.close_connection(connection_key)
+        logger.info(f"Closed file manager for device {device_id}")
+        
+    except Exception as e:
+        logger.error(f"Error closing file manager: {e}")
