@@ -4,7 +4,6 @@ import { useTheme } from '../context/ThemeContext'
 import SystemMetrics from './SystemMetrics'
 import ServicesTab from './ServicesTab'
 import ProcessesTab from './ProcessesTab'
-import FilesAndFoldersTab from './FilesAndFoldersTab'
 
 function DeviceDashboard({ device, socket, onClose }) {
   const { theme } = useTheme()
@@ -156,20 +155,6 @@ function DeviceDashboard({ device, socket, onClose }) {
           >
             Processes
           </button>
-          <button
-            onClick={() => setActiveTab('files')}
-            className={`px-6 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'files'
-                ? theme === 'dark'
-                  ? 'bg-gray-800 text-blue-400 border-b-2 border-blue-400'
-                  : 'bg-white text-blue-600 border-b-2 border-blue-600'
-                : theme === 'dark'
-                ? 'text-gray-400 hover:text-gray-200'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Files & Folders
-          </button>
         </div>
 
         {/* Tab Content */}
@@ -179,9 +164,6 @@ function DeviceDashboard({ device, socket, onClose }) {
           )}
           {activeTab === 'processes' && (
             <ProcessesTab device={device} theme={theme} />
-          )}
-          {activeTab === 'files' && (
-            <FilesAndFoldersTab device={device} socket={socket} theme={theme} />
           )}
         </div>
       </div>

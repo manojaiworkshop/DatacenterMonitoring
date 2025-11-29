@@ -1,16 +1,16 @@
-import { Terminal, Edit, Trash2 } from 'lucide-react'
+import { Terminal, Edit, Trash2, FolderOpen } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-function DeviceContextMenu({ x, y, device, canSSH, onSSH, onEdit, onRemove, onClose }) {
+function DeviceContextMenu({ x, y, device, canSSH, onSSH, onEdit, onRemove, onFileEditor, onClose }) {
   const { theme } = useTheme()
   const [position, setPosition] = useState({ top: y, left: x })
 
   useEffect(() => {
     // Adjust position if menu would go off screen
     const menuWidth = 200
-    const menuHeight = canSSH ? 120 : 80
+    const menuHeight = canSSH ? 160 : 120 // Increased height for new option
     const windowWidth = window.innerWidth
     const windowHeight = window.innerHeight
 
@@ -40,17 +40,30 @@ function DeviceContextMenu({ x, y, device, canSSH, onSSH, onEdit, onRemove, onCl
       style={{ top: `${position.top}px`, left: `${position.left}px` }}
     >
       {canSSH && (
-        <button
-          onClick={onSSH}
-          className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-t-lg transition-all ${
-            theme === 'dark'
-              ? 'hover:bg-slate-700 text-white'
-              : 'hover:bg-blue-50 text-gray-800'
-          }`}
-        >
-          <Terminal className="w-4 h-4 text-green-500" />
-          <span>Connect SSH</span>
-        </button>
+        <>
+          <button
+            onClick={onSSH}
+            className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-t-lg transition-all ${
+              theme === 'dark'
+                ? 'hover:bg-slate-700 text-white'
+                : 'hover:bg-blue-50 text-gray-800'
+            }`}
+          >
+            <Terminal className="w-4 h-4 text-green-500" />
+            <span>Connect SSH</span>
+          </button>
+          <button
+            onClick={onFileEditor}
+            className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium transition-all ${
+              theme === 'dark'
+                ? 'hover:bg-slate-700 text-white'
+                : 'hover:bg-blue-50 text-gray-800'
+            }`}
+          >
+            <FolderOpen className="w-4 h-4 text-purple-500" />
+            <span>File Editor</span>
+          </button>
+        </>
       )}
       <button
         onClick={onEdit}

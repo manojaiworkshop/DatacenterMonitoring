@@ -38,7 +38,7 @@ const DEVICE_COLORS = {
   }
 }
 
-function DeviceTree({ datacenter, devices, onConnectSSH, onEdit, onDelete, onDeviceClick }) {
+function DeviceTree({ datacenter, devices, onConnectSSH, onEdit, onDelete, onDeviceClick, onFileEditor }) {
   const { theme } = useTheme()
   const [expandedTypes, setExpandedTypes] = useState({
     pc: true,
@@ -85,6 +85,13 @@ function DeviceTree({ datacenter, devices, onConnectSSH, onEdit, onDelete, onDev
 
   const handleSSH = (device) => {
     onConnectSSH(device)
+    closeContextMenu()
+  }
+
+  const handleFileEditor = (device) => {
+    if (onFileEditor) {
+      onFileEditor(device)
+    }
     closeContextMenu()
   }
 
@@ -288,6 +295,7 @@ function DeviceTree({ datacenter, devices, onConnectSSH, onEdit, onDelete, onDev
           device={contextMenu.device}
           canSSH={canSSH(contextMenu.device.device_type)}
           onSSH={() => handleSSH(contextMenu.device)}
+          onFileEditor={() => handleFileEditor(contextMenu.device)}
           onEdit={handleEdit}
           onRemove={handleRemove}
           onClose={closeContextMenu}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { io } from 'socket.io-client'
 import DatacenterPanel from '../components/DatacenterPanel'
 import DeviceDashboard from '../components/DeviceDashboard'
+import FileEditorDashboard from '../components/FileEditorDashboard'
 import { authService } from '../services/authService'
 import { datacenterService } from '../services/datacenterService'
 import { LogOut, Settings, Plus, Server, Building2, Activity, Terminal } from 'lucide-react'
@@ -18,6 +19,8 @@ function DatacenterMonitorPage() {
   const [loading, setLoading] = useState(true)
   const [selectedDevice, setSelectedDevice] = useState(null)
   const [selectedDatacenterId, setSelectedDatacenterId] = useState(null)
+  const [fileEditorDevice, setFileEditorDevice] = useState(null)
+  const [fileEditorDatacenterId, setFileEditorDatacenterId] = useState(null)
   const navigate = useNavigate()
   const { theme } = useTheme()
 
@@ -96,6 +99,11 @@ function DatacenterMonitorPage() {
   const handleDeviceClick = (device, datacenterId) => {
     setSelectedDevice(device)
     setSelectedDatacenterId(datacenterId)
+  }
+
+  const handleFileEditorClick = (device, datacenterId) => {
+    setFileEditorDevice(device)
+    setFileEditorDatacenterId(datacenterId)
   }
 
   const handleLogout = () => {
@@ -248,7 +256,7 @@ function DatacenterMonitorPage() {
         ) : (
           <div 
             className={`grid gap-4 flex-1 min-h-0 ${
-              selectedDevice 
+              selectedDevice || fileEditorDevice
                 ? 'grid-cols-2' 
                 : datacenters.length === 1 
                 ? 'grid-cols-1' 
@@ -256,7 +264,62 @@ function DatacenterMonitorPage() {
             }`}
             style={{ gridAutoRows: 'minmax(0, 1fr)' }}
           >
-            {selectedDevice ? (
+            {fileEditorDevice ? (
+              // When file editor is opened
+              <>
+                {fileEditorDatacenterId === datacenters[0]?.id ? (
+                  // Left datacenter clicked - show left datacenter and file editor on right
+                  <>
+                    <div className="col-span-1 h-full min-h-0">
+                      <DatacenterPanel
+                        key={datacenters[0].id}
+                        datacenter={datacenters[0]}
+                        socket={socket}
+                        onUpdate={loadDatacenters}
+                        onDeviceClick={(device) => handleDeviceClick(device, datacenters[0].id)}
+                        onFileEditor={(device) => handleFileEditorClick(device, datacenters[0].id)}
+                        position="left"
+                      />
+                    </div>
+                    <div className="col-span-1 h-full min-h-0">
+                      <FileEditorDashboard
+                        device={fileEditorDevice}
+                        socket={socket}
+                        onClose={() => {
+                          setFileEditorDevice(null)
+                          setFileEditorDatacenterId(null)
+                        }}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  // Right datacenter clicked - show file editor on left and datacenter on right
+                  <>
+                    <div className="col-span-1 h-full min-h-0">
+                      <FileEditorDashboard
+                        device={fileEditorDevice}
+                        socket={socket}
+                        onClose={() => {
+                          setFileEditorDevice(null)
+                          setFileEditorDatacenterId(null)
+                        }}
+                      />
+                    </div>
+                    <div className="col-span-1 h-full min-h-0">
+                      <DatacenterPanel
+                        key={datacenters[1]?.id || datacenters[0].id}
+                        datacenter={datacenters[1] || datacenters[0]}
+                        socket={socket}
+                        onUpdate={loadDatacenters}
+                        onDeviceClick={(device) => handleDeviceClick(device, datacenters[1]?.id || datacenters[0].id)}
+                        onFileEditor={(device) => handleFileEditorClick(device, datacenters[1]?.id || datacenters[0].id)}
+                        position="right"
+                      />
+                    </div>
+                  </>
+                )}
+              </>
+            ) : selectedDevice ? (
               // When device is selected, show one datacenter and dashboard
               <>
                 {selectedDatacenterId === datacenters[0]?.id ? (
@@ -269,6 +332,7 @@ function DatacenterMonitorPage() {
                         socket={socket}
                         onUpdate={loadDatacenters}
                         onDeviceClick={(device) => handleDeviceClick(device, datacenters[0].id)}
+                        onFileEditor={(device) => handleFileEditorClick(device, datacenters[0].id)}
                         position="left"
                       />
                     </div>
@@ -303,6 +367,7 @@ function DatacenterMonitorPage() {
                         socket={socket}
                         onUpdate={loadDatacenters}
                         onDeviceClick={(device) => handleDeviceClick(device, datacenters[1]?.id || datacenters[0].id)}
+                        onFileEditor={(device) => handleFileEditorClick(device, datacenters[1]?.id || datacenters[0].id)}
                         position="right"
                       />
                     </div>
@@ -319,6 +384,7 @@ function DatacenterMonitorPage() {
                       socket={socket}
                       onUpdate={loadDatacenters}
                       onDeviceClick={(device) => handleDeviceClick(device, datacenter.id)}
+                      onFileEditor={(device) => handleFileEditorClick(device, datacenter.id)}
                       position={index === 0 ? 'left' : 'right'}
                     />
                   </div>
