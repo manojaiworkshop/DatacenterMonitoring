@@ -31,15 +31,15 @@ function FileEditorDashboard({ device, socket, onClose }) {
   useEffect(() => {
     if (!socket || !device) return
 
-    // Load root directory on mount
-    loadDirectory('/')
-
-    // Listen for socket events
+    // Listen for socket events first
     socket.on('directory_listed', handleDirectoryListed)
     socket.on('file_read', handleFileRead)
     socket.on('file_written', handleFileWritten)
     socket.on('files_searched', handleFilesSearched)
     socket.on('file_error', handleFileError)
+
+    // Load root directory on mount after listeners are set up
+    loadDirectory('/')
 
     return () => {
       socket.off('directory_listed', handleDirectoryListed)
@@ -285,42 +285,50 @@ function FileEditorDashboard({ device, socket, onClose }) {
           <div className={`p-3 border-b ${
             theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
           }`}>
-            <div className="flex space-x-2">
-              <div className="relative flex-1">
-                <Search className={`absolute left-2 top-2 w-4 h-4 ${
-                  theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                }`} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="Search files..."
-                  className={`w-full pl-8 pr-3 py-2 text-sm rounded border ${
-                    theme === 'dark'
-                      ? 'bg-slate-800 border-gray-600 text-white placeholder-gray-400'
-                      : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                />
-              </div>
-              <button
-                onClick={handleSearch}
-                disabled={searching || !searchQuery.trim()}
-                className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+            <div className="relative w-full mb-2">
+              <Search className={`absolute left-3 top-2.5 w-4 h-4 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              }`} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="Search files..."
+                className={`w-full pl-9 pr-3 py-2 text-sm rounded border ${
                   theme === 'dark'
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-700 disabled:text-gray-500'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-300 disabled:text-gray-500'
-                }`}
-              >
-                {searching ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Go'}
-              </button>
+                    ? 'bg-slate-800 border-gray-600 text-white placeholder-gray-400'
+                    : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              />
             </div>
+            <button
+              onClick={handleSearch}
+              disabled={searching || !searchQuery.trim()}
+              className={`w-full px-3 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center ${
+                theme === 'dark'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-700 disabled:text-gray-500'
+                  : 'bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-300 disabled:text-gray-500'
+              }`}
+            >
+              {searching ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4 mr-2" />
+                  Search
+                </>
+              )}
+            </button>
             
             {/* Current Path */}
-            <div className={`mt-2 text-xs truncate ${
+            <div className={`mt-3 text-xs truncate ${
               theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
             }`}>
-              <span className="font-mono">{currentPath}</span>
+              <span className="font-semibold">Path:</span> <span className="font-mono">{currentPath}</span>
             </div>
           </div>
 
@@ -350,38 +358,47 @@ function FileEditorDashboard({ device, socket, onClose }) {
                 )}
                 
                 {/* File List */}
-                {files.map((file, index) => {
-                  const Icon = getFileIcon(file)
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => handleFileClick(file)}
-                      className={`w-full text-left px-2 py-1.5 rounded text-sm flex items-center space-x-2 mb-0.5 ${
-                        selectedFile?.path === file.path
-                          ? theme === 'dark'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-blue-100 text-blue-800'
-                          : theme === 'dark'
-                          ? 'hover:bg-slate-700 text-gray-300'
-                          : 'hover:bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      <Icon className={`w-4 h-4 flex-shrink-0 ${
-                        file.is_directory 
-                          ? theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                          : theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                      }`} />
-                      <span className="truncate flex-1">{file.name}</span>
-                      {!file.is_directory && (
-                        <span className={`text-xs ${
-                          theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
-                        }`}>
-                          {formatFileSize(file.size)}
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
+                {files.length === 0 && !loading ? (
+                  <div className={`text-center py-8 px-4 ${
+                    theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                  }`}>
+                    <FolderOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No files or folders</p>
+                  </div>
+                ) : (
+                  files.map((file, index) => {
+                    const Icon = getFileIcon(file)
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => handleFileClick(file)}
+                        className={`w-full text-left px-2 py-1.5 rounded text-sm flex items-center space-x-2 mb-0.5 ${
+                          selectedFile?.path === file.path
+                            ? theme === 'dark'
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-blue-100 text-blue-800'
+                            : theme === 'dark'
+                            ? 'hover:bg-slate-700 text-gray-300'
+                            : 'hover:bg-gray-200 text-gray-700'
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 flex-shrink-0 ${
+                          file.is_directory 
+                            ? theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                            : theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`} />
+                        <span className="truncate flex-1">{file.name}</span>
+                        {!file.is_directory && (
+                          <span className={`text-xs ${
+                            theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                          }`}>
+                            {formatFileSize(file.size)}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })
+                )}
                 
                 {/* Search Results */}
                 {searchResults.length > 0 && (
