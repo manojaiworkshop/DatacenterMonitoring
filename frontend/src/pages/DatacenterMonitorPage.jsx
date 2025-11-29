@@ -183,9 +183,9 @@ function DatacenterMonitorPage() {
       </div>
 
       {/* Datacenter Panels - Side by Side OR with Dashboard */}
-      <div className="flex-1 px-6 py-2 overflow-hidden">
+      <div className="flex-1 px-6 py-2 overflow-hidden flex flex-col min-h-0">
         {loading ? (
-          <div className="h-full flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="relative">
                 <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500/20 border-t-blue-600 mx-auto mb-4"></div>
@@ -200,7 +200,7 @@ function DatacenterMonitorPage() {
             </div>
           </div>
         ) : datacenters.length === 0 ? (
-          <div className="h-full flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center">
             <div className={`max-w-2xl w-full p-12 rounded-2xl border-2 border-dashed text-center ${
               theme === 'dark' 
                 ? 'bg-slate-800/50 border-blue-500/30 backdrop-blur-sm' 
@@ -247,14 +247,14 @@ function DatacenterMonitorPage() {
           </div>
         ) : (
           <div 
-            className={`grid gap-4 ${
+            className={`grid gap-4 flex-1 min-h-0 ${
               selectedDevice 
                 ? 'grid-cols-2' 
                 : datacenters.length === 1 
                 ? 'grid-cols-1' 
                 : 'grid-cols-2'
             }`}
-            style={{ height: '85vh', maxHeight: '900px' }}
+            style={{ gridAutoRows: 'minmax(0, 1fr)' }}
           >
             {selectedDevice ? (
               // When device is selected, show one datacenter and dashboard
@@ -262,7 +262,7 @@ function DatacenterMonitorPage() {
                 {selectedDatacenterId === datacenters[0]?.id ? (
                   // Left datacenter clicked - show left datacenter and dashboard on right
                   <>
-                    <div className="col-span-1 h-full">
+                    <div className="col-span-1 h-full min-h-0">
                       <DatacenterPanel
                         key={datacenters[0].id}
                         datacenter={datacenters[0]}
@@ -272,7 +272,7 @@ function DatacenterMonitorPage() {
                         position="left"
                       />
                     </div>
-                    <div className="col-span-1 h-full">
+                    <div className="col-span-1 h-full min-h-0">
                       <DeviceDashboard
                         device={selectedDevice}
                         socket={socket}
@@ -286,7 +286,7 @@ function DatacenterMonitorPage() {
                 ) : (
                   // Right datacenter clicked - show dashboard on left and datacenter on right
                   <>
-                    <div className="col-span-1 h-full">
+                    <div className="col-span-1 h-full min-h-0">
                       <DeviceDashboard
                         device={selectedDevice}
                         socket={socket}
@@ -296,7 +296,7 @@ function DatacenterMonitorPage() {
                         }}
                       />
                     </div>
-                    <div className="col-span-1 h-full">
+                    <div className="col-span-1 h-full min-h-0">
                       <DatacenterPanel
                         key={datacenters[1]?.id || datacenters[0].id}
                         datacenter={datacenters[1] || datacenters[0]}
@@ -313,7 +313,7 @@ function DatacenterMonitorPage() {
               // No device selected - show datacenters
               <>
                 {datacenters.slice(0, 2).map((datacenter, index) => (
-                  <div key={datacenter.id} className="h-full">
+                  <div key={datacenter.id} className="h-full min-h-0">
                     <DatacenterPanel
                       datacenter={datacenter}
                       socket={socket}

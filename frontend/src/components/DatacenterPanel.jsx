@@ -207,8 +207,9 @@ function DatacenterPanel({ datacenter, socket, onUpdate, onDeviceClick, position
         </div>
       </div>
 
-      {/* Content Area - Device Tree with Scroll - Flex-1 to take remaining space */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3">
+      {/* Content Area - Device Tree with Scroll */}
+      {/* Scrollable container with explicit height constraint */}
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3">
         <DeviceTree
           datacenter={datacenter}
           devices={datacenter.devices || []}
