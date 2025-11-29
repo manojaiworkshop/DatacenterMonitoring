@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Building2, Plus, Terminal as TerminalIcon, Maximize2, Minimize2, GripHorizontal } from 'lucide-react'
+import { Building2, Plus, Terminal as TerminalIcon, Maximize2, Minimize2, GripHorizontal, ChevronDown } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import DeviceTree from './DeviceTree'
 import TerminalTabs from './TerminalTabs'
@@ -161,41 +161,54 @@ function DatacenterPanel({ datacenter, socket, onUpdate, onDeviceClick, position
       }`}
     >
       {/* Datacenter Header with Gradient */}
-      <div className={`px-5 py-4 border-b ${
+      <div className={`flex-shrink-0 px-5 py-4 border-b ${
         theme === 'dark'
           ? 'bg-gradient-to-r from-slate-900/90 to-slate-800/90 border-blue-500/20'
           : 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200'
       }`}>
-        <div className="flex items-center space-x-3">
-          <Building2 className="w-6 h-6 text-blue-500" />
-          <div>
-            <h2 className={`text-lg font-semibold ${
-              theme === 'dark' ? 'text-white' : 'text-gray-800'
-            }`}>
-              {datacenter.name}
-            </h2>
-            {datacenter.location && (
-              <p className={`text-sm ${
-                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-lg blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
+              <div className="relative bg-gradient-to-br from-blue-600 to-cyan-600 p-2 rounded-lg">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+            </div>
+            <div>
+              <h2 className={`text-lg font-bold ${
+                theme === 'dark' ? 'text-white' : 'text-gray-800'
               }`}>
-                {datacenter.location}
-              </p>
-            )}
+                {datacenter.name}
+              </h2>
+              {datacenter.location && (
+                <div className="flex items-center space-x-1 mt-0.5">
+                  <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <p className={`text-xs font-medium ${
+                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    {datacenter.location}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
+          
+          <button
+            onClick={() => setShowAddDevice(true)}
+            className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-blue-500/50 transform hover:scale-105 text-sm font-semibold"
+            title="Add Device"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Device</span>
+          </button>
         </div>
-        
-        <button
-          onClick={() => setShowAddDevice(true)}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors text-sm"
-          title="Add Device"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Device</span>
-        </button>
       </div>
 
-      {/* Content Area - Device Tree - Full Height */}
-      <div className="overflow-y-auto overflow-x-hidden p-3 h-full">
+      {/* Content Area - Device Tree with Scroll - Flex-1 to take remaining space */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3">
         <DeviceTree
           datacenter={datacenter}
           devices={datacenter.devices || []}
@@ -293,19 +306,26 @@ function DatacenterPanel({ datacenter, socket, onUpdate, onDeviceClick, position
         </div>
       )}
 
-      {/* Terminal Icon Button - Shows When Minimized */}
-      {activeTerminals.length > 0 && !showTerminals && (
+      {/* Terminal Icon Button - Always Visible at Corner */}
+      {activeTerminals.length > 0 && (
         <button
-          onClick={() => setShowTerminals(true)}
-          className={`absolute ${position === 'left' ? 'left-4' : 'right-4'} bottom-4 z-40 flex items-center space-x-2 px-4 py-2.5 rounded-lg shadow-xl transition-all transform hover:scale-110 ${
-            theme === 'dark'
+          onClick={() => setShowTerminals(!showTerminals)}
+          className={`absolute ${position === 'left' ? 'left-4' : 'right-4'} bottom-4 z-[60] flex items-center space-x-2 px-4 py-2.5 rounded-lg shadow-xl transition-all transform hover:scale-110 ${
+            showTerminals
+              ? theme === 'dark'
+                ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+                : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+              : theme === 'dark'
               ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700'
               : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
           }`}
-          title="Show SSH Terminals"
+          title={showTerminals ? "Hide SSH Terminals" : "Show SSH Terminals"}
         >
           <TerminalIcon className="w-5 h-5 text-white" />
           <span className="text-white font-bold text-sm">{activeTerminals.length}</span>
+          {showTerminals && (
+            <ChevronDown className="w-4 h-4 text-white ml-1" />
+          )}
         </button>
       )}
 
