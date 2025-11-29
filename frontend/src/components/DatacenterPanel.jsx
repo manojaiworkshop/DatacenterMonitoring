@@ -1,18 +1,20 @@
-import { useState } from 'react'
-import { Building2, Plus, ChevronRight, ChevronDown } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Building2, Plus, Terminal as TerminalIcon, Maximize2, Minimize2, GripHorizontal } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import DeviceTree from './DeviceTree'
 import TerminalTabs from './TerminalTabs'
 import AddDeviceModal from './AddDeviceModal'
 import { datacenterService } from '../services/datacenterService'
 
-function DatacenterPanel({ datacenter, socket, onUpdate, onDeviceClick }) {
+function DatacenterPanel({ datacenter, socket, onUpdate, onDeviceClick, position = 'left' }) {
   const { theme } = useTheme()
   const [showAddDevice, setShowAddDevice] = useState(false)
   const [activeTerminals, setActiveTerminals] = useState([])
   const [activeTab, setActiveTab] = useState(null)
-  const [terminalHeight, setTerminalHeight] = useState(20) // Default 20%
+  const [terminalHeight, setTerminalHeight] = useState(40) // Default 40%
   const [selectedDevice, setSelectedDevice] = useState(null)
+  const [showTerminals, setShowTerminals] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   const handleAddDevice = async (deviceData) => {
     await datacenterService.addDevice(datacenter.id, {
@@ -60,7 +62,8 @@ function DatacenterPanel({ datacenter, socket, onUpdate, onDeviceClick }) {
           sessionId: data.terminal_id,
         }
         setActiveTerminals((prev) => [...prev, newTerminal])
-        setActiveTab(device.id)  // Set as active tab
+        setActiveTab(data.terminal_id)  // Set active tab to terminal ID
+        setShowTerminals(true)  // Auto-open terminal panel
       })
 
       // Handle errors
@@ -70,6 +73,52 @@ function DatacenterPanel({ datacenter, socket, onUpdate, onDeviceClick }) {
       })
     }
   }
+
+  const toggleTerminals = () => {
+    setShowTerminals(!showTerminals)
+  }
+
+  const handleMouseDown = (e) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  // Handle resize drag
+  useEffect(() => {
+    if (!isDragging) return
+
+    const handleMouseMove = (e) => {
+      const panel = document.querySelector(`[data-datacenter-id="${datacenter.id}"]`)
+      if (!panel) return
+
+      const rect = panel.getBoundingClientRect()
+      const mouseY = e.clientY
+      const panelTop = rect.top
+      const panelHeight = rect.height
+      
+      // Calculate distance from top to mouse
+      const distanceFromTop = mouseY - panelTop
+      
+      // Calculate new terminal height as percentage (from bottom)
+      const newHeight = ((panelHeight - distanceFromTop) / panelHeight) * 100
+      
+      // Constrain between 20% and 80%
+      const constrainedHeight = Math.min(Math.max(newHeight, 20), 80)
+      setTerminalHeight(constrainedHeight)
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging, datacenter.id])
 
   const handleCloseTerminal = (terminalId) => {
     if (socket) {
@@ -103,16 +152,19 @@ function DatacenterPanel({ datacenter, socket, onUpdate, onDeviceClick }) {
   }
 
   return (
-    <div className={`flex flex-col h-full rounded-lg overflow-hidden border ${
-      theme === 'dark' 
-        ? 'bg-gray-800 border-gray-700' 
-        : 'bg-white border-gray-300'
-    }`}>
-      {/* Datacenter Header */}
-      <div className={`px-4 py-3 border-b flex items-center justify-between ${
+    <div 
+      data-datacenter-id={datacenter.id}
+      className={`relative flex flex-col h-full rounded-2xl overflow-hidden border shadow-xl ${
+        theme === 'dark' 
+          ? 'bg-slate-800/80 border-blue-500/20 backdrop-blur-sm' 
+          : 'bg-white/90 border-blue-200 backdrop-blur-sm'
+      }`}
+    >
+      {/* Datacenter Header with Gradient */}
+      <div className={`px-5 py-4 border-b ${
         theme === 'dark'
-          ? 'bg-gray-900 border-gray-700'
-          : 'bg-gray-50 border-gray-200'
+          ? 'bg-gradient-to-r from-slate-900/90 to-slate-800/90 border-blue-500/20'
+          : 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200'
       }`}>
         <div className="flex items-center space-x-3">
           <Building2 className="w-6 h-6 text-blue-500" />
@@ -142,15 +194,8 @@ function DatacenterPanel({ datacenter, socket, onUpdate, onDeviceClick }) {
         </button>
       </div>
 
-      {/* Content Area - Device Tree */}
-      <div 
-        className="overflow-auto p-3"
-        style={{ 
-          height: activeTerminals.length > 0 
-            ? `${100 - terminalHeight}%` 
-            : '100%' 
-        }}
-      >
+      {/* Content Area - Device Tree - Full Height */}
+      <div className="overflow-y-auto overflow-x-hidden p-3 h-full">
         <DeviceTree
           datacenter={datacenter}
           devices={datacenter.devices || []}
@@ -161,23 +206,107 @@ function DatacenterPanel({ datacenter, socket, onUpdate, onDeviceClick }) {
         />
       </div>
 
-      {/* Terminal Tabs - Dynamic height when active */}
-      {activeTerminals.length > 0 && (
+      {/* Terminal Panel - Floating Overlay with High Z-Index */}
+      {activeTerminals.length > 0 && showTerminals && (
         <div 
-          className={`border-t ${
-            theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-          }`} 
-          style={{ height: `${terminalHeight}%` }}
+          className={`absolute bottom-0 left-0 right-0 border-t shadow-2xl z-50 ${
+            theme === 'dark' 
+              ? 'border-blue-500/30 bg-slate-900/98 backdrop-blur-xl' 
+              : 'border-blue-200 bg-white/98 backdrop-blur-xl'
+          }`}
+          style={{
+            height: `${terminalHeight}%`
+          }}
         >
-          <TerminalTabs
-            activeTerminals={activeTerminals}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            onCloseTerminal={handleCloseTerminal}
-            socket={socket}
-            onHeightChange={setTerminalHeight}
-          />
+          {/* Resize Handle */}
+          <div
+            onMouseDown={handleMouseDown}
+            className={`flex items-center justify-center cursor-ns-resize border-b select-none ${
+              isDragging 
+                ? 'bg-blue-500 h-1.5' 
+                : theme === 'dark' 
+                ? 'bg-gray-700 hover:bg-blue-600 border-gray-600 h-1 hover:h-1.5' 
+                : 'bg-gray-300 hover:bg-blue-400 border-gray-400 h-1 hover:h-1.5'
+            } transition-all`}
+            title="Drag to resize terminal"
+          >
+            <GripHorizontal className={`w-8 h-4 ${
+              isDragging 
+                ? 'text-white' 
+                : theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+            }`} />
+          </div>
+
+          {/* Terminal Header with Controls */}
+          <div 
+            className={`flex items-center justify-between px-4 py-2 ${
+              theme === 'dark'
+                ? 'bg-slate-900/90'
+                : 'bg-blue-50'
+            }`}
+          >
+            <div className="flex items-center space-x-2">
+              <TerminalIcon className="w-4 h-4 text-blue-500" />
+              <span className={`text-sm font-medium ${
+                theme === 'dark' ? 'text-white' : 'text-gray-800'
+              }`}>
+                SSH Terminals ({activeTerminals.length})
+              </span>
+            </div>
+            
+            <div className="flex items-center space-x-1">
+              {/* Minimize Button */}
+              <button 
+                onClick={() => setShowTerminals(false)}
+                className={`p-1.5 rounded transition-colors ${
+                  theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-blue-200'
+                }`}
+                title="Minimize"
+              >
+                <Minimize2 className="w-4 h-4 text-gray-500" />
+              </button>
+              
+              {/* Maximize/Restore Button */}
+              <button 
+                onClick={() => setTerminalHeight(terminalHeight === 80 ? 40 : 80)}
+                className={`p-1.5 rounded transition-colors ${
+                  theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-blue-200'
+                }`}
+                title={terminalHeight === 80 ? "Restore" : "Maximize"}
+              >
+                <Maximize2 className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+          </div>
+
+          {/* Terminal Content */}
+          <div className="h-[calc(100%-50px)]">
+            <TerminalTabs
+              activeTerminals={activeTerminals}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onCloseTerminal={handleCloseTerminal}
+              socket={socket}
+              terminalHeight={terminalHeight}
+            />
+          </div>
         </div>
+      )}
+
+      {/* Terminal Icon Button - Shows When Minimized */}
+      {activeTerminals.length > 0 && !showTerminals && (
+        <button
+          onClick={() => setShowTerminals(true)}
+          className={`absolute ${position === 'left' ? 'left-4' : 'right-4'} bottom-4 z-40 flex items-center space-x-2 px-4 py-2.5 rounded-lg shadow-xl transition-all transform hover:scale-110 ${
+            theme === 'dark'
+              ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700'
+              : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
+          }`}
+          title="Show SSH Terminals"
+        >
+          <TerminalIcon className="w-5 h-5 text-white" />
+          <span className="text-white font-bold text-sm">{activeTerminals.length}</span>
+        </button>
       )}
 
       {/* Add Device Modal */}

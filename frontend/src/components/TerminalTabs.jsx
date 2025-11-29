@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { Terminal as TerminalIcon, X, GripHorizontal } from 'lucide-react'
+import { Terminal as TerminalIcon, X } from 'lucide-react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { useTheme } from '../context/ThemeContext'
 
-function TerminalTabs({ activeTerminals, activeTab, onTabChange, onCloseTerminal, socket, onHeightChange }) {
+function TerminalTabs({ activeTerminals, activeTab, onTabChange, onCloseTerminal, socket, terminalHeight }) {
   const { theme } = useTheme()
   const terminalRefs = useRef({})  // Store by terminal ID
   const fitAddons = useRef({})     // Store by terminal ID
-  const [isDragging, setIsDragging] = useState(false)
-  const [terminalHeight, setTerminalHeight] = useState(20) // Default 20%
+  const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
     // Initialize terminals for each terminal session
@@ -114,65 +113,47 @@ function TerminalTabs({ activeTerminals, activeTab, onTabChange, onCloseTerminal
   useEffect(() => {
     if (activeTab && fitAddons.current[activeTab]) {
       setTimeout(() => {
-        fitAddons.current[activeTab].fit()
+        try {
+          fitAddons.current[activeTab].fit()
+          
+          // Notify backend of new size
+          const term = terminalRefs.current[activeTab]
+          if (term && socket) {
+            socket.emit('terminal_resize', {
+              terminal_id: activeTab,
+              rows: term.rows,
+              cols: term.cols,
+            })
+          }
+        } catch (error) {
+          console.error('Error fitting terminal:', error)
+        }
       }, 100)
     }
   }, [activeTab, terminalHeight])
 
-  // Handle resize drag
-  const handleMouseDown = (e) => {
-    setIsDragging(true)
-    e.preventDefault()
-  }
-
+  // Fit all terminals when height changes
   useEffect(() => {
-    if (!isDragging) return
-
-    const handleMouseMove = (e) => {
-      // Get the parent container bounds
-      const panel = e.target.closest('.flex.flex-col.h-full')?.parentElement
-      if (!panel) return
-
-      const rect = panel.getBoundingClientRect()
-      const mouseY = e.clientY
-      const panelTop = rect.top
-      const panelHeight = rect.height
-      
-      // Calculate the distance from the top of the panel to the mouse
-      const distanceFromTop = mouseY - panelTop
-      
-      // Calculate percentage for terminal (inverted - bottom portion)
-      const newHeight = ((panelHeight - distanceFromTop) / panelHeight) * 100
-      
-      // Constrain between 15% and 70%
-      const constrainedHeight = Math.min(Math.max(newHeight, 15), 70)
-      setTerminalHeight(constrainedHeight)
-      
-      // Notify parent component of height change
-      if (onHeightChange) {
-        onHeightChange(constrainedHeight)
-      }
-      
-      // Refit all terminals after resize
-      Object.values(fitAddons.current).forEach(addon => {
-        if (addon) {
-          setTimeout(() => addon.fit(), 50)
+    setTimeout(() => {
+      Object.entries(fitAddons.current).forEach(([termId, fitAddon]) => {
+        try {
+          fitAddon.fit()
+          
+          // Notify backend of new size
+          const term = terminalRefs.current[termId]
+          if (term && socket) {
+            socket.emit('terminal_resize', {
+              terminal_id: termId,
+              rows: term.rows,
+              cols: term.cols,
+            })
+          }
+        } catch (error) {
+          console.error('Error fitting terminal:', error)
         }
       })
-    }
-
-    const handleMouseUp = () => {
-      setIsDragging(false)
-    }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [isDragging, onHeightChange])
+    }, 150)
+  }, [terminalHeight, socket])
 
   if (activeTerminals.length === 0) {
     return null
@@ -180,25 +161,6 @@ function TerminalTabs({ activeTerminals, activeTab, onTabChange, onCloseTerminal
 
   return (
     <div className="flex flex-col h-full">
-      {/* Resize Handle */}
-      <div
-        onMouseDown={handleMouseDown}
-        className={`flex items-center justify-center cursor-ns-resize border-b select-none ${
-          isDragging 
-            ? 'bg-blue-500 h-1' 
-            : theme === 'dark' 
-            ? 'bg-gray-700 hover:bg-blue-600 border-gray-600 h-1 hover:h-1.5' 
-            : 'bg-gray-300 hover:bg-blue-400 border-gray-400 h-1 hover:h-1.5'
-        } transition-all`}
-        title="Drag to resize terminal"
-      >
-        <GripHorizontal className={`w-8 h-4 ${
-          isDragging 
-            ? 'text-white' 
-            : theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-        }`} />
-      </div>
-
       {/* Tabs */}
       <div className={`flex items-center space-x-1 border-b ${
         theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'
@@ -206,9 +168,9 @@ function TerminalTabs({ activeTerminals, activeTab, onTabChange, onCloseTerminal
         {activeTerminals.map((terminal) => (
           <div
             key={terminal.id}
-            onClick={() => onTabChange(terminal.deviceId)}
+            onClick={() => onTabChange(terminal.id)}
             className={`flex items-center space-x-2 px-3 py-2 cursor-pointer text-sm ${
-              activeTab === terminal.deviceId
+              activeTab === terminal.id
                 ? theme === 'dark'
                   ? 'bg-gray-900 border-b-2 border-blue-500 text-white'
                   : 'bg-white border-b-2 border-blue-500 text-gray-900'
@@ -250,7 +212,7 @@ function TerminalTabs({ activeTerminals, activeTab, onTabChange, onCloseTerminal
             key={terminal.id}
             id={`terminal-${terminal.id}`}
             className={`h-full ${
-              activeTab === terminal.deviceId ? 'block' : 'hidden'
+              activeTab === terminal.id ? 'block' : 'hidden'
             }`}
           />
         ))}
