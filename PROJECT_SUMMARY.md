@@ -1,8 +1,8 @@
-# 🎉 Dual Terminal App - Project Summary
+# 🎉 Data Center Monitoring App - Project Summary
 
 ## ✅ What Has Been Created
 
-I've successfully analyzed your requirements and created a **complete full-stack dual terminal application** with the following structure:
+I've successfully analyzed your requirements and created a **complete full-stack Data Center Monitoring application** with the following structure:
 
 ### 🏗️ Architecture
 
@@ -158,7 +158,7 @@ The frontend structure is planned but needs to be implemented:
    - Socket.IO client connection
    - xterm.js integration
    - Terminal input/output handling
-   - Dual terminal side-by-side view
+   - Data Center Monitoring side-by-side view
    - Authentication UI
    - Protected routes
 
@@ -324,7 +324,7 @@ To complete the project, you need to:
 
 ## 🎉 Summary
 
-You now have a **complete backend infrastructure** for a dual terminal application with:
+You now have a **complete backend infrastructure** for a Data Center Monitoring application with:
 - ✅ Authentication system
 - ✅ Terminal management
 - ✅ Real-time communication

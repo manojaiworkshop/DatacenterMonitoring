@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Dual Terminal App now uses **PyInstaller** to compile the Python backend into a **standalone executable**. This provides:
+The Data Center Monitoring App now uses **PyInstaller** to compile the Python backend into a **standalone executable**. This provides:
 
 ✅ **Enhanced Security** - No source code in production
 ✅ **Smaller Image Size** - No Python runtime needed

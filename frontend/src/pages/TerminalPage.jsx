@@ -123,7 +123,7 @@ function TerminalPage() {
           <Monitor className="w-8 h-8 text-blue-500" />
           <h1 className={`text-2xl font-bold ${
             theme === 'dark' ? 'text-white' : 'text-gray-800'
-          }`}>Dual Terminal App</h1>
+          }`}>Data Center Monitoring App</h1>
         </div>
         <div className="flex items-center space-x-4">
           <div className={`text-sm mr-4 ${

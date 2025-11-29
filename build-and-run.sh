@@ -1,10 +1,10 @@
 #!/bin/bash
-# Build and Run Script for Dual Terminal App
+# Build and Run Script for Data Center Monitoring App
 
 set -e
 
 echo "======================================"
-echo "Dual Terminal App - Docker Build"
+echo "Data Center Monitoring App - Docker Build"
 echo "======================================"
 
 # Colors for output

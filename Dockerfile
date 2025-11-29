@@ -1,5 +1,5 @@
 # ====================================
-# Multi-Stage Dockerfile: Dual Terminal Application
+# Multi-Stage Dockerfile: Data Center Monitoring Application
 # Combined Backend (FastAPI + Socket.IO) + Frontend (React + Vite)
 # ====================================
 
@@ -95,7 +95,7 @@ COPY --from=frontend-builder /build/dist /usr/share/nginx/html
 # Remove default nginx configuration
 RUN rm -f /etc/nginx/sites-enabled/default
 
-# Create nginx configuration for the dual terminal app
+# Create nginx configuration for the Data Center Monitoring app
 RUN cat > /etc/nginx/conf.d/default.conf <<'EOF'
 server {
     listen 80;

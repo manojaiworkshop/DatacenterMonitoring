@@ -1,7 +1,7 @@
-# Build and Run Script for Dual Terminal App (Windows PowerShell)
+# Build and Run Script for Data Center Monitoring App (Windows PowerShell)
 
 Write-Host "======================================" -ForegroundColor Cyan
-Write-Host "Dual Terminal App - Docker Build" -ForegroundColor Cyan
+Write-Host "Data Center Monitoring App - Docker Build" -ForegroundColor Cyan
 Write-Host "======================================" -ForegroundColor Cyan
 Write-Host ""
 

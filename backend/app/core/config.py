@@ -3,7 +3,7 @@ from typing import List
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Dual Terminal App"
+    APP_NAME: str = "Data Center Monitoring App"
     DEBUG: bool = True
     SECRET_KEY: str = "your-secret-key-change-this"
     ALGORITHM: str = "HS256"

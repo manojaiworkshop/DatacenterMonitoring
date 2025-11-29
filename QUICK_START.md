@@ -1,4 +1,4 @@
-# 🚀 Quick Start Guide - Dual Terminal App
+# 🚀 Quick Start Guide - Data Center Monitoring App
 
 ## What You Have Now
 
@@ -8,7 +8,7 @@
 ✅ **Terminal Service** - Real-time terminal with PTY support
 ✅ **Documentation** - Comprehensive guides and architecture docs
 
-⏳ **Needs Frontend** - React app with dual terminal UI
+⏳ **Needs Frontend** - React app with Data Center Monitoring UI
 
 ---
 
@@ -189,7 +189,7 @@ python -m app.main
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  Dual Terminal App                    [User] [Logout]    │
+│  Data Center Monitoring App                    [User] [Logout]    │
 ├──────────────────────────────────────────────────────────┤
 │                                                           │
 │  ┌─────────────────────┬──────────────────────────┐     │
